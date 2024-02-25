@@ -21,12 +21,19 @@ public class UserInfoService implements UserDetailsService {
     @Autowired
     MongoTemplate mongoTemplate;
 
+    /**
+     * Loads a user by their email address.
+     *
+     * @param emailAddress The email address of the user.
+     * @return A UserDetails object representing the user.
+     * @throws UsernameNotFoundException If the user is not found.
+     */
     @Override
     public UserDetails loadUserByUsername(String emailAddress) throws UsernameNotFoundException {
         Query query = new Query().addCriteria(Criteria.where("email").is(emailAddress));
-        User user = mongoTemplate.findOne(query,  User.class);
-        if (user == null){
-              throw new UsernameNotFoundException("User not found with email: "+ emailAddress);
+        User user = mongoTemplate.findOne(query, User.class);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found with email: " + emailAddress);
         }
         Set<GrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("USER"));
         return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);

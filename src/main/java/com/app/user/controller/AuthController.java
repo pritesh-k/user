@@ -1,5 +1,8 @@
 package com.app.user.controller;
 
+import com.app.user.exceptions.AuthenticationException;
+import com.app.user.exceptions.DummyUserException;
+import com.app.user.exceptions.RegistrationException;
 import com.app.user.model.api.Login;
 import com.app.user.model.api.User;
 import com.app.user.service.DummyUserMapper;
@@ -35,16 +38,14 @@ public class AuthController {
             , produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> loginUser(@Valid Login login){
         try {
-            if(login.getUsername() == null || login.getPassword() == null) {
-                throw new Exception("UserName or Password is Empty");
+            if (login.getUsername() == null || login.getPassword() == null) {
+                throw new AuthenticationException("UserName or Password is Empty");
             }
             Map<String, String> token = userService.loginUser(login);
-
             return new ResponseEntity<>(token, HttpStatus.OK);
-
-        } catch (UsernameNotFoundException | BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        } catch (Exception e){
+        } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
@@ -53,30 +54,25 @@ public class AuthController {
     public ResponseEntity<Void> registerUser(@Valid @RequestBody User user){
         try {
             com.app.user.model.data.User userEntity = userModelMapper.userDtoToEntity(user);
-            // create user object
             userService.registerUser(userEntity);
-
             return new ResponseEntity<>(HttpStatus.CREATED);
-
-        } catch (Exception e){
+        } catch (RegistrationException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 
     @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping("/addDummyUsers")
     public ResponseEntity<Void> registerUser(){
         try {
-
-            // create user object
             dummyUserMapper.mapToNewTest();
-
             return new ResponseEntity<>(HttpStatus.CREATED);
-
-        } catch (Exception e){
+        } catch (DummyUserException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 }

@@ -26,6 +26,10 @@ public class DummyUserMapper {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    /**
+     * Fetches dummy user data from an external source using FeignClient,
+     * maps it to internal User entities, and saves them to MongoDB.
+     */
     public void mapToNewTest(){
 
         ResponseEntity<DummyUserParent> responseEntity = feignClient.listUsers();

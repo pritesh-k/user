@@ -28,20 +28,32 @@ import java.util.Date;
 
 import static org.bson.codecs.configuration.CodecRegistries.fromCodecs;
 
+/**
+ * MongoDB configuration class for defining MongoClient, database factory, and custom converters.
+ */
 @Configuration
 public class MongoConfig extends AbstractMongoClientConfiguration {
 
     @Autowired
     ServerConfig serverConfig;
 
+    /**
+     * Retrieve the MongoDB database name.
+     *
+     * @return The MongoDB database name.
+     */
     @Override
     protected String getDatabaseName() {
         return serverConfig.getMongoDbName();
     }
 
+    /**
+     * Configure and provide the MongoClient bean.
+     *
+     * @return The configured MongoClient.
+     */
     @Override
-    public MongoClient mongoClient(){
-
+    public MongoClient mongoClient() {
         String uri = serverConfig.getMongoUri();
 
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
@@ -55,48 +67,75 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
         return MongoClients.create(mongoClientSettings);
     }
 
+    /**
+     * Configure and provide the MongoDatabaseFactory bean.
+     *
+     * @return The configured MongoDatabaseFactory.
+     */
     @Override
-    public MongoDatabaseFactory mongoDbFactory(){
+    public MongoDatabaseFactory mongoDbFactory() {
         return new SimpleMongoClientDatabaseFactory(mongoClient(), getDatabaseName());
     }
 
+    /**
+     * Configure and provide the MongoTemplate bean.
+     *
+     * @return The configured MongoTemplate.
+     */
     @Bean
-    public MongoTemplate mongoTemplate(){
+    public MongoTemplate mongoTemplate() {
         return new MongoTemplate(mongoDbFactory(), mongoConverter());
     }
 
+    /**
+     * Custom converter for reading ZonedDateTime from Date.
+     */
     @ReadingConverter
-    public static class ZonedDateTimeReadConverter implements Converter<Date, ZonedDateTime>{
+    public static class ZonedDateTimeReadConverter implements Converter<Date, ZonedDateTime> {
         @Override
         public ZonedDateTime convert(Date date) {
             return date.toInstant().atZone(ZoneOffset.UTC);
         }
     }
 
+    /**
+     * Custom converter for writing ZonedDateTime to Date.
+     */
     @WritingConverter
-    public static class ZonedDateTimeWriteConverter implements Converter<ZonedDateTime, Date>{
+    public static class ZonedDateTimeWriteConverter implements Converter<ZonedDateTime, Date> {
         @Override
         public Date convert(ZonedDateTime zonedDateTime) {
             return Date.from(zonedDateTime.toInstant());
         }
     }
 
-//    @ReadingConverter
-//    public static class UserRolesEnum implements Converter<String, UserDetails.RolesEnum>{
-//
-//        @Override
-//        public UserDetails.RolesEnum convert(String role) {
-//            return UserDetails.RolesEnum.fromValue(role);
-//        }
-//    }
+    // Uncomment and modify as needed for additional custom converters
+    /*
+    @ReadingConverter
+    public static class UserRolesEnum implements Converter<String, UserDetails.RolesEnum> {
+        @Override
+        public UserDetails.RolesEnum convert(String role) {
+            return UserDetails.RolesEnum.fromValue(role);
+        }
+    }
+    */
 
-    public MongoCustomConversions customConversions(){
+    /**
+     * Configure and provide custom conversions for MongoDB.
+     *
+     * @return The configured MongoCustomConversions.
+     */
+    public MongoCustomConversions customConversions() {
         return new MongoCustomConversions(Arrays.asList(new ZonedDateTimeReadConverter(),
                 new ZonedDateTimeWriteConverter()));
     }
 
-
-    public MongoConverter mongoConverter(){
+    /**
+     * Configure and provide the MongoConverter bean.
+     *
+     * @return The configured MongoConverter.
+     */
+    public MongoConverter mongoConverter() {
         MongoMappingContext mappingContext = new MongoMappingContext();
         DbRefResolver defaultDbRefResolver = new DefaultDbRefResolver(mongoDbFactory());
         MappingMongoConverter mongoConverter = new MappingMongoConverter(defaultDbRefResolver, mappingContext);
